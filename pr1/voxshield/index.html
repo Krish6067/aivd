@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="VOXSHIELD — Real-Time Audio Authenticity Monitor. Frontend demonstration for AI-generated voice detection." />
+  <title>VOXSHIELD — Audio Authenticity Monitor</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <!-- ═══════════════════════ HEADER ═══════════════════════════ -->
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+      <div class="brand" aria-label="VOXSHIELD">
+        <div class="brand-logo" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">VOXSHIELD</span>
+          <span class="brand-subtitle">REAL-TIME AUDIO AUTHENTICITY MONITOR</span>
+        </div>
+      </div>
+      <div class="header-controls">
+        <div class="status-pill" id="system-status" aria-live="polite">
+          <span class="status-dot status-dot--ready" aria-hidden="true"></span>
+          <span class="status-text">FRONTEND READY</span>
+        </div>
+        <button class="icon-btn" id="settings-btn" aria-label="Open settings" title="Settings">
+          <i data-lucide="settings" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════ TAB NAVIGATION ═══════════════════ -->
+  <nav class="tab-nav" role="tablist" aria-label="Detection mode">
+    <div class="tab-nav-inner">
+      <button class="tab-btn tab-btn--active" role="tab" data-tab="monitor"
+              aria-selected="true" aria-controls="tab-panel-monitor" id="tab-btn-monitor">
+        <i data-lucide="mic" aria-hidden="true"></i>
+        <span>LIVE MONITOR</span>
+      </button>
+      <button class="tab-btn" role="tab" data-tab="upload"
+              aria-selected="false" aria-controls="tab-panel-upload" id="tab-btn-upload">
+        <i data-lucide="upload-cloud" aria-hidden="true"></i>
+        <span>FILE UPLOAD</span>
+      </button>
+      <button class="tab-btn" role="tab" data-tab="call"
+              aria-selected="false" aria-controls="tab-panel-call" id="tab-btn-call">
+        <i data-lucide="phone-call" aria-hidden="true"></i>
+        <span>LIVE CALL</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════ MAIN CONTENT ═════════════════════ -->
+  <main id="main-content" class="dashboard-grid" role="main">
+
+    <!-- ─── COLUMN LEFT ─────────────────────────── -->
+    <div class="col-left">
+
+      <!-- ══════════ TAB: LIVE MONITOR ══════════ -->
+      <div class="tab-panel" id="tab-panel-monitor"
+           role="tabpanel" aria-labelledby="tab-btn-monitor">
+
+        <section class="panel panel--waveform" aria-labelledby="waveform-heading">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <i data-lucide="mic" class="panel-icon" aria-hidden="true"></i>
+              <h2 class="panel-title" id="waveform-heading">LIVE AUDIO MONITOR</h2>
+            </div>
+            <div class="mic-status-badge" id="mic-status-badge" aria-live="polite">
+              <span class="mic-status-dot" id="mic-status-dot" aria-hidden="true"></span>
+              <span id="mic-status-text">IDLE</span>
+            </div>
+          </div>
+
+          <div class="waveform-container" role="img" aria-label="Live audio waveform visualization">
+            <canvas id="waveform-canvas" aria-hidden="true"></canvas>
+            <div class="waveform-overlay" id="waveform-overlay">
+              <i data-lucide="mic-off" aria-hidden="true"></i>
+              <span>Click START MONITORING to activate microphone</span>
+            </div>
+          </div>
+
+          <div class="level-meter-row" aria-label="Audio input level">
+            <span class="level-label">INPUT LEVEL</span>
+            <div class="level-bar-track" role="progressbar" aria-valuenow="0"
+                 aria-valuemin="0" aria-valuemax="100" aria-label="Audio level">
+              <div class="level-bar-fill" id="level-bar-fill"></div>
+            </div>
+            <span class="level-value" id="level-value">—</span>
+          </div>
+
+          <div class="waveform-controls">
+            <div class="btn-group" role="group" aria-label="Microphone controls">
+              <button class="btn btn--primary" id="start-btn" aria-label="Start microphone monitoring">
+                <i data-lucide="play" aria-hidden="true"></i>
+                START MONITORING
+              </button>
+              <button class="btn btn--ghost" id="stop-btn" disabled aria-label="Stop microphone monitoring">
+                <i data-lucide="square" aria-hidden="true"></i>
+                STOP
+              </button>
+            </div>
+            <div class="timer-display" aria-live="polite" aria-label="Recording duration">
+              <i data-lucide="clock" aria-hidden="true"></i>
+              <span id="timer-display">00:00</span>
+            </div>
+          </div>
+
+          <div class="error-banner" id="mic-error" role="alert" aria-live="assertive" hidden>
+            <i data-lucide="alert-triangle" aria-hidden="true"></i>
+            <span id="mic-error-text"></span>
+          </div>
+        </section>
+      </div><!-- /tab-panel-monitor -->
+
+      <!-- ══════════ TAB: FILE UPLOAD ══════════ -->
+      <div class="tab-panel" id="tab-panel-upload"
+           role="tabpanel" aria-labelledby="tab-btn-upload" hidden>
+
+        <!-- Drop zone / file selection -->
+        <section class="panel panel--upload" aria-labelledby="upload-heading">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <i data-lucide="upload-cloud" class="panel-icon" aria-hidden="true"></i>
+              <h2 class="panel-title" id="upload-heading">AUDIO FILE ANALYSIS</h2>
+            </div>
+            <div class="demo-badge-sm" id="upload-mode-badge">DEMO MODE</div>
+          </div>
+
+          <!-- Drop zone -->
+          <div class="upload-dropzone" id="upload-dropzone" role="button"
+               tabindex="0" aria-label="Click or drag and drop an audio file to upload">
+            <div class="dropzone-inner" id="dropzone-inner">
+              <div class="dropzone-icon" aria-hidden="true">
+                <i data-lucide="file-music"></i>
+              </div>
+              <p class="dropzone-title">Drop audio file here</p>
+              <p class="dropzone-sub">or click to browse</p>
+              <p class="dropzone-formats">WAV · MP3 · OGG · FLAC · M4A</p>
+            </div>
+            <input type="file" id="file-input" accept=".wav,.mp3,.ogg,.flac,.m4a,audio/*"
+                   aria-hidden="true" tabindex="-1" />
+          </div>
+
+          <!-- File info (shown after selection) -->
+          <div class="file-info-panel" id="file-info-panel" hidden>
+            <div class="file-info-row">
+              <div class="file-name-group">
+                <i data-lucide="file-music" class="file-icon" aria-hidden="true"></i>
+                <span class="file-name" id="file-name-display">—</span>
+              </div>
+              <button class="btn btn--ghost btn--sm" id="remove-file-btn"
+                      aria-label="Remove selected file">
+                <i data-lucide="x" aria-hidden="true"></i>
+                REMOVE
+              </button>
+            </div>
+            <div class="file-meta-row">
+              <span class="file-meta-chip" id="file-size-display">—</span>
+              <span class="file-meta-chip" id="file-type-display">—</span>
+              <span class="file-meta-chip" id="file-duration-display">—</span>
+            </div>
+          </div>
+
+          <!-- Static waveform of uploaded file -->
+          <div class="file-waveform-container" id="file-waveform-container" hidden
+               role="img" aria-label="Uploaded audio waveform">
+            <canvas id="file-waveform-canvas" aria-hidden="true"></canvas>
+            <div class="file-waveform-label">AUDIO WAVEFORM</div>
+          </div>
+
+          <!-- Audio player -->
+          <div class="audio-player" id="audio-player" hidden aria-label="Audio playback controls">
+            <audio id="audio-element" preload="auto" aria-hidden="true"></audio>
+            <button class="player-play-btn" id="player-play-btn" aria-label="Play audio">
+              <i data-lucide="play" aria-hidden="true" id="player-play-icon"></i>
+            </button>
+            <div class="player-progress">
+              <span class="player-time" id="player-current-time">0:00</span>
+              <div class="player-seek-track">
+                <div class="player-seek-fill" id="player-seek-fill"></div>
+                <input type="range" id="player-seek" class="player-seek-input"
+                       min="0" max="100" value="0" step="0.01"
+                       aria-label="Seek to position in audio" />
+              </div>
+              <span class="player-time" id="player-total-time">0:00</span>
+            </div>
+          </div>
+
+          <!-- Analyze controls -->
+          <div class="upload-controls">
+            <button class="btn btn--primary" id="analyze-btn" disabled
+                    aria-label="Start file analysis">
+              <i data-lucide="activity" aria-hidden="true"></i>
+              ANALYZE FILE
+            </button>
+            <button class="btn btn--ghost btn--sm" id="reset-upload-btn" hidden
+                    aria-label="Reset and analyze another file">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              NEW FILE
+            </button>
+          </div>
+
+          <!-- Analysis progress steps -->
+          <div class="analysis-steps" id="analysis-steps" aria-live="polite" hidden>
+            <div class="step-item" id="step-1">
+              <div class="step-dot" aria-hidden="true"></div>
+              <span class="step-name">PREPARING PIPELINE</span>
+              <span class="step-status" id="step-status-1">PENDING</span>
+            </div>
+            <div class="step-item" id="step-2">
+              <div class="step-dot" aria-hidden="true"></div>
+              <span class="step-name">DECODING AUDIO</span>
+              <span class="step-status" id="step-status-2">PENDING</span>
+            </div>
+            <div class="step-item" id="step-3">
+              <div class="step-dot" aria-hidden="true"></div>
+              <span class="step-name">EXTRACTING FEATURES</span>
+              <span class="step-status" id="step-status-3">PENDING</span>
+            </div>
+            <div class="step-item" id="step-4">
+              <div class="step-dot" aria-hidden="true"></div>
+              <span class="step-name" id="step-4-name">MODEL INFERENCE [DEMO]</span>
+              <span class="step-status" id="step-status-4">PENDING</span>
+            </div>
+            <div class="step-item" id="step-5">
+              <div class="step-dot" aria-hidden="true"></div>
+              <span class="step-name">COMPUTING SCORE</span>
+              <span class="step-status" id="step-status-5">PENDING</span>
+            </div>
+          </div>
+
+          <!-- Upload analysis result -->
+          <div class="upload-result" id="upload-result" hidden role="region"
+               aria-label="Analysis result" aria-live="polite">
+            <div class="result-header">
+              <span class="result-demo-badge" id="result-mode-badge">DEMO RESULT</span>
+              <span class="result-classification" id="result-classification">—</span>
+            </div>
+            <p class="result-note" id="result-note">
+              This is a simulated result for demonstration purposes.
+              No anti-spoofing model is currently connected — scores are not calculated from actual audio content.
+            </p>
+          </div>
+
+          <!-- File analysis error -->
+          <div class="error-banner" id="file-error" role="alert" aria-live="assertive" hidden>
+            <i data-lucide="alert-triangle" aria-hidden="true"></i>
+            <span id="file-error-text"></span>
+          </div>
+        </section>
+      </div><!-- /tab-panel-upload -->
+
+      <!-- ══════════ TAB: LIVE CALL ══════════ -->
+      <div class="tab-panel" id="tab-panel-call"
+           role="tabpanel" aria-labelledby="tab-btn-call" hidden>
+
+        <!-- Capability notice -->
+        <section class="panel panel--call-notice" aria-label="Audio source information">
+          <div class="notice-header">
+            <i data-lucide="info" class="panel-icon" aria-hidden="true"></i>
+            <h2 class="panel-title">AUDIO SOURCE REQUIREMENTS</h2>
+          </div>
+          <p class="notice-body">
+            Browser microphone access captures your <strong>physical microphone input only</strong> —
+            it does not automatically include audio from a phone call, VoIP app, or another application.
+            To analyze call audio, route it to a virtual audio device and select it below.
+          </p>
+          <!-- Accordion: setup guide -->
+          <details class="setup-guide">
+            <summary class="setup-guide-summary">
+              <i data-lucide="chevron-right" aria-hidden="true" class="summary-chevron"></i>
+              HOW TO ROUTE CALL AUDIO
+            </summary>
+            <ol class="setup-steps">
+              <li>
+                <strong>Windows:</strong> Install
+                <em>VB-Audio Virtual Cable</em> (free). Set it as your default playback device
+                in sound settings, then select "CABLE Output" as the input source below.
+              </li>
+              <li>
+                <strong>macOS:</strong> Install <em>BlackHole</em> (free, open-source).
+                Create a Multi-Output Device in Audio MIDI Setup. Select BlackHole as the input source below.
+              </li>
+              <li>
+                <strong>Linux:</strong> Use a PulseAudio loopback module:
+                <code>pactl load-module module-loopback</code>. Select the loopback source below.
+              </li>
+              <li>
+                Select the correct virtual device in <strong>AUDIO SOURCE</strong> below, then click
+                <strong>START CALL MONITOR</strong>.
+              </li>
+            </ol>
+          </details>
+        </section>
+
+        <!-- Call monitor panel -->
+        <section class="panel panel--call-monitor" aria-labelledby="call-heading">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <i data-lucide="radio" class="panel-icon" aria-hidden="true"></i>
+              <h2 class="panel-title" id="call-heading">CALL AUDIO MONITOR</h2>
+            </div>
+            <div class="mic-status-badge" id="call-status-badge" aria-live="polite">
+              <span class="mic-status-dot" id="call-status-dot" aria-hidden="true"></span>
+              <span id="call-status-text">IDLE</span>
+            </div>
+          </div>
+
+          <!-- Device selector -->
+          <div class="device-selector-row">
+            <label for="call-device-select" class="device-label">AUDIO SOURCE</label>
+            <div class="device-select-group">
+              <select id="call-device-select" class="device-select"
+                      aria-label="Select audio input device for call monitoring">
+                <option value="">Default Microphone</option>
+              </select>
+              <button class="icon-btn" id="refresh-devices-btn"
+                      aria-label="Refresh device list" title="Refresh devices">
+                <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Waveform canvas for call tab -->
+          <div class="waveform-container" role="img" aria-label="Call audio waveform">
+            <canvas id="call-waveform-canvas" aria-hidden="true"></canvas>
+            <div class="waveform-overlay" id="call-waveform-overlay">
+              <i data-lucide="mic-off" aria-hidden="true"></i>
+              <span>Click START CALL MONITOR to begin</span>
+            </div>
+          </div>
+
+          <!-- Level meter -->
+          <div class="level-meter-row" aria-label="Call audio input level">
+            <span class="level-label">INPUT LEVEL</span>
+            <div class="level-bar-track" role="progressbar" aria-valuenow="0"
+                 aria-valuemin="0" aria-valuemax="100" aria-label="Call audio level"
+                 id="call-level-track">
+              <div class="level-bar-fill" id="call-level-bar-fill"></div>
+            </div>
+            <span class="level-value" id="call-level-value">—</span>
+          </div>
+
+          <!-- Controls -->
+          <div class="waveform-controls">
+            <div class="btn-group" role="group" aria-label="Call monitor controls">
+              <button class="btn btn--primary" id="call-start-btn"
+                      aria-label="Start call audio monitoring">
+                <i data-lucide="play" aria-hidden="true"></i>
+                START CALL MONITOR
+              </button>
+              <button class="btn btn--ghost" id="call-stop-btn" disabled
+                      aria-label="Stop call audio monitoring">
+                <i data-lucide="square" aria-hidden="true"></i>
+                STOP
+              </button>
+            </div>
+            <div class="timer-display" aria-live="polite">
+              <i data-lucide="clock" aria-hidden="true"></i>
+              <span id="call-timer-display">00:00</span>
+            </div>
+          </div>
+
+          <!-- Demo tick indicator -->
+          <div class="call-demo-ticker" id="call-demo-ticker" hidden aria-live="polite">
+            <div class="ticker-dot" aria-hidden="true"></div>
+            <span id="call-ticker-text">DEMO ANALYSIS RUNNING — next update in 5s</span>
+          </div>
+
+          <div class="error-banner" id="call-error" role="alert" aria-live="assertive" hidden>
+            <i data-lucide="alert-triangle" aria-hidden="true"></i>
+            <span id="call-error-text"></span>
+          </div>
+        </section>
+      </div><!-- /tab-panel-call -->
+
+      <!-- Session History — always visible below all tabs -->
+      <section class="panel panel--history" aria-labelledby="history-heading">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <i data-lucide="history" class="panel-icon" aria-hidden="true"></i>
+            <h2 class="panel-title" id="history-heading">SESSION HISTORY</h2>
+          </div>
+          <button class="btn btn--ghost btn--sm" id="clear-history-btn"
+                  aria-label="Clear session history">
+            <i data-lucide="trash-2" aria-hidden="true"></i>
+            CLEAR
+          </button>
+        </div>
+        <div class="history-list" id="history-list" role="list"
+             aria-live="polite" aria-label="Recent sessions">
+          <p class="history-empty" id="history-empty">No sessions recorded yet.</p>
+        </div>
+      </section>
+
+    </div><!-- /col-left -->
+
+    <!-- ─── COLUMN RIGHT ────────────────────────── -->
+    <div class="col-right">
+
+      <!-- Authenticity Score Ring -->
+      <section class="panel panel--score" aria-labelledby="score-heading">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <i data-lucide="shield-check" class="panel-icon" aria-hidden="true"></i>
+            <h2 class="panel-title" id="score-heading">AUTHENTICITY SCORE</h2>
+          </div>
+          <div class="demo-badge" id="demo-badge">DEMO MODE</div>
+        </div>
+
+        <!-- Mode indicator (updates per active tab) -->
+        <div class="score-mode-pill" id="score-mode-pill" aria-live="polite">
+          <span id="score-mode-text">LIVE MONITOR</span>
+        </div>
+
+        <div class="score-ring-wrapper" role="img" aria-label="Authenticity score ring"
+             aria-describedby="score-aria-desc">
+          <svg class="score-ring-svg" id="score-ring-svg" viewBox="0 0 220 220" aria-hidden="true">
+            <defs>
+              <filter id="glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <circle class="ring-track" cx="110" cy="110" r="90" />
+            <circle class="ring-progress" id="ring-progress" cx="110" cy="110" r="90"
+                    filter="url(#glow-filter)" />
+            <text class="ring-score-text" id="ring-score-text"
+                  x="110" y="100" text-anchor="middle" dominant-baseline="middle">94%</text>
+            <text class="ring-label-text" id="ring-label-text"
+                  x="110" y="130" text-anchor="middle">DEMO SCORE</text>
+          </svg>
+          <span id="score-aria-desc" class="sr-only">
+            Authenticity score: 94 percent. Demo score — not calculated from live data.
+          </span>
+        </div>
+
+        <div class="demo-controls">
+          <label class="toggle-label" for="demo-toggle">
+            <span>DEMO MODE</span>
+            <div class="toggle-switch">
+              <input type="checkbox" id="demo-toggle" checked
+                     aria-label="Enable demo mode to show illustrative scores" />
+              <span class="toggle-track" aria-hidden="true">
+                <span class="toggle-thumb"></span>
+              </span>
+            </div>
+          </label>
+          <p class="demo-note" id="demo-note">
+            Showing illustrative scores. Not calculated from audio or an AI model.
+          </p>
+        </div>
+      </section>
+
+      <!-- Analysis Results Panel -->
+      <section class="panel panel--analysis" aria-labelledby="analysis-heading">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <i data-lucide="scan-line" class="panel-icon" aria-hidden="true"></i>
+            <h2 class="panel-title" id="analysis-heading">ANALYSIS RESULTS</h2>
+          </div>
+        </div>
+        <dl class="analysis-grid" aria-label="Analysis details">
+          <div class="analysis-row">
+            <dt class="analysis-key">MODE</dt>
+            <dd class="analysis-val" id="analysis-mode" aria-live="polite">LIVE MONITOR</dd>
+          </div>
+          <div class="analysis-row">
+            <dt class="analysis-key">STATUS</dt>
+            <dd class="analysis-val" id="analysis-status" aria-live="polite">WAITING FOR ANALYSIS</dd>
+          </div>
+          <div class="analysis-row">
+            <dt class="analysis-key">CLASSIFICATION</dt>
+            <dd class="analysis-val" id="analysis-classification" aria-live="polite">—</dd>
+          </div>
+          <div class="analysis-row">
+            <dt class="analysis-key">SCORE INTERPRETATION</dt>
+            <dd class="analysis-val" id="analysis-interpretation" aria-live="polite">—</dd>
+          </div>
+          <div class="analysis-row">
+            <dt class="analysis-key">INPUT SOURCE</dt>
+            <dd class="analysis-val" id="analysis-mic" aria-live="polite">—</dd>
+          </div>
+          <div class="analysis-row">
+            <dt class="analysis-key">INPUT LEVEL</dt>
+            <dd class="analysis-val" id="analysis-level" aria-live="polite">—</dd>
+          </div>
+          <div class="analysis-row">
+            <dt class="analysis-key">PROCESSING</dt>
+            <dd class="analysis-val" id="analysis-processing" aria-live="polite">IDLE</dd>
+          </div>
+          <div class="analysis-row">
+            <dt class="analysis-key">LAST UPDATE</dt>
+            <dd class="analysis-val" id="analysis-last-update" aria-live="polite">—</dd>
+          </div>
+        </dl>
+      </section>
+
+    </div><!-- /col-right -->
+
+  </main>
+
+  <!-- ═══════════════════════ FOOTER ═══════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <i data-lucide="info" aria-hidden="true" class="footer-icon"></i>
+      <p class="footer-disclaimer">
+        <strong>VOXSHIELD frontend demonstration.</strong>
+        Waveform and level visualization use microphone input for local rendering only — no audio is transmitted or stored.
+        File upload analysis and call monitoring are simulated in DEMO MODE.
+        Voice-cloning detection requires a genuine anti-spoofing model.
+      </p>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════ SETTINGS MODAL ═══════════════════ -->
+  <div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true"
+       aria-labelledby="settings-title" hidden>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2 class="modal-title" id="settings-title">SETTINGS</h2>
+        <button class="icon-btn" id="settings-close-btn" aria-label="Close settings">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-row">
+          <label for="fft-size-select" class="setting-label">FFT SIZE (Waveform Resolution)</label>
+          <select id="fft-size-select" class="setting-select">
+            <option value="512">512 (Fast)</option>
+            <option value="1024" selected>1024 (Balanced)</option>
+            <option value="2048">2048 (Detail)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="smoothing-select" class="setting-label">WAVEFORM SMOOTHING</label>
+          <select id="smoothing-select" class="setting-select">
+            <option value="0.6">Low</option>
+            <option value="0.8" selected>Medium</option>
+            <option value="0.92">High</option>
+          </select>
+        </div>
+        <p class="setting-note">Settings take effect when monitoring restarts.</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# ── VOXSHIELD Backend — Python Dependencies ─────────────────────────────────
+# Tested with Python 3.11–3.14
+# Install: pip install -r requirements.txt
+# For GPU inference add: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# ── Web framework ────────────────────────────────────────────────────────────
+fastapi==0.111.1
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9          # multipart file uploads
+websockets==12.0                 # WebSocket support
+
+# ── Data validation ──────────────────────────────────────────────────────────
+pydantic==2.7.4
+pydantic-settings==2.3.4         # env-var settings
+
+# ── Deep learning ────────────────────────────────────────────────────────────
+torch==2.14.1                    # PyTorch CPU build; supports Python 3.14
+# torchaudio is not used by the application. SoundFile/librosa handle decoding.
+
+# ── Audio processing ─────────────────────────────────────────────────────────
+numpy==1.26.4
+scipy==1.14.0
+librosa==0.10.2.post1            # feature extraction + resampling
+soundfile==0.12.1                # libsndfile-backed WAV/FLAC/OGG decode
+
+# ── Async / HTTP ─────────────────────────────────────────────────────────────
+aiofiles==23.2.1                 # async temp-file I/O
+httpx==0.27.0                    # test client
+
+# ── Configuration ────────────────────────────────────────────────────────────
+python-dotenv==1.0.1
+
+# ── Testing ──────────────────────────────────────────────────────────────────
+pytest==8.2.2
+pytest-asyncio==0.23.7
+pytest-mock==3.14.0
+anyio==4.4.0                     # async test backend
